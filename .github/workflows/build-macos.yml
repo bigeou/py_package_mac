@@ -1,17 +1,14 @@
-name: Build macOS standalone app
+name: Build macOS GUI app
 
 on:
-  # 打 tag 的时候自动打包，例如 v1.0.0
   push:
     tags:
       - "v*"
-
-  # 也可以在 GitHub Actions 页面手动点运行
   workflow_dispatch:
 
 jobs:
   build-macos:
-    runs-on: macos-latest  # GitHub 的 macOS Runner，是 Intel，但 M 芯片可以用 Rosetta 跑
+    runs-on: macos-latest
 
     steps:
       - name: Checkout repository
@@ -30,20 +27,19 @@ jobs:
           fi
           pip install pyinstaller
 
-      - name: Build standalone binary with PyInstaller
+      - name: Build macOS GUI app with PyInstaller
         run: |
           # 这里假设你的入口文件叫 main.py
-          # --onefile  打成单个可执行文件
-          # --clean    清理临时文件
-          # --strip    去掉符号表，减小体积
+          # 关键参数：--windowed / --noconsole 用来取消终端窗口
+          # macOS 下会生成一个 my_app.app
           pyinstaller main.py \
             --name my_app \
-            --onefile \
+            --windowed \
             --clean \
             --strip
 
-      - name: Upload artifact
+      - name: Upload artifact (.app bundle)
         uses: actions/upload-artifact@v4
         with:
-          name: my_app-macos
-          path: dist/my_app
+          name: my_app-macos-app
+          path: dist/my_app.app
