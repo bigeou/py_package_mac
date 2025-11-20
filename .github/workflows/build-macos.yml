@@ -1,4 +1,4 @@
-name: Build macOS single-file app
+name: Build macOS App (Nuitka)
 
 on:
   push:
@@ -15,35 +15,31 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.9"
 
-      - name: Install dependencies and PyInstaller
+      - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
+          python -m pip install --upgrade pip wheel
           if [ -f requirements.txt ]; then
             pip install -r requirements.txt
           fi
-          pip install pyinstaller
+          pip install nuitka ordered-set zstandard
 
-      - name: Build single-file GUI binary
+      - name: Build .app using Nuitka
         run: |
-          # 这里假设入口是 main.py
-          # 要 GUI、不要终端窗口：--windowed
-          # 要单个文件：--onefile
-          # --strip 减小体积，--clean 清理中间文件
-          pyinstaller main.py \
-            --name my_app \
-            --onefile \
-            --windowed \
-            --strip \
-            --clean
+          python -m nuitka \
+              --standalone \
+              --macos-app-name=my_app \
+              --macos-app-icon=icon.icns \
+              --enable-plugin=tk-inter \
+              --macos-create-app-bundle \
+              --onefile-tempdir-spec=%CACHE_DIR% \
+              main.py
 
-          ls -lh dist
-
-      - name: Upload binary artifact
+      - name: Upload app
         uses: actions/upload-artifact@v4
         with:
-          name: my_app-macos-single-file
-          path: dist/my_app
+          name: my_app-macos
+          path: my_app.app
